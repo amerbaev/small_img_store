@@ -19,8 +19,8 @@ def generate_img_to_hdf5(count: int):
         hashes.append(xxhash.xxh64(image_bio.getvalue()).digest())
     with h5py.File('data/images.hdf5', 'w') as f:
         img_group = f.create_group('images')
-        img_group.create_dataset('img', data=np.void(np.array(images)))
-        img_group.create_dataset('xxhash64', data=np.void(np.array(hashes)))
+        img_group.create_dataset('img', data=np.void(np.array(images)), dtype=np.dtype('V65790'))
+        img_group.create_dataset('xxhash64', data=np.void(np.array(hashes)), dtype=np.dtype('V8'))
 
 
 if __name__ == '__main__':
