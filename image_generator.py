@@ -1,4 +1,3 @@
-import io
 import numpy as np
 from PIL import Image
 import xxhash
@@ -13,15 +12,13 @@ BLOCK = 1000
 
 
 def generate_img_hash(count):
-    images = np.empty(count, dtype=np.dtype((np.void, 49353)))
+    images = np.empty(count, dtype=np.dtype((np.void, 49152)))
     hashes = np.empty(count, dtype=np.dtype((np.void, 8)))
     for i in range(count):
-        image_bio = io.BytesIO()
         image_array = np.random.randint(256, size=(128, 128, 3))
-        image = Image.fromarray(image_array.astype('uint8')).convert('RGB')
-        image.save(image_bio, format='png')
-        images[i] = np.void(image_bio.getvalue())
-        hashes[i] = np.void(xxhash.xxh64(image_bio.getvalue()).digest())
+        image = Image.fromarray(image_array.astype('uint8')).convert('RGB').tobytes()
+        images[i] = np.void(image)
+        hashes[i] = np.void(xxhash.xxh64(image).digest())
 
     return images, hashes
 

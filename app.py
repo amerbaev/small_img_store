@@ -27,7 +27,7 @@ def init_hdf5(to_size):
 if __name__ == '__main__':
     init_hdf5(1000000)
 
-    # f = h5py.File('data/images.hdf5', 'r+')
+    # f = h5py.File('data/images.hdf5', 'r')
     # image_dset = f['/images/img']
     # hash_dset = f['/images/xxhash64']
     #
