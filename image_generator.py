@@ -41,5 +41,5 @@ if __name__ == '__main__':
                     hash_dset[total_index] = hashes_arr[k]
                 except Exception as e:
                     f.close()
-                    print(e)
+                    raise e
         f.close()
