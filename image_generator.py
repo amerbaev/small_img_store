@@ -1,14 +1,10 @@
 import numpy as np
+import os
 from PIL import Image
 import xxhash
 import h5py
 from tqdm import tqdm
 from multiprocessing import Pool
-
-PROC = 8
-
-COUNT = 1000000
-BLOCK = 1000
 
 
 def generate_img_hash(count):
@@ -23,19 +19,21 @@ def generate_img_hash(count):
     return images, hashes
 
 
-if __name__ == '__main__':
-    gen_iterations = COUNT // (PROC * BLOCK)
-    p = Pool(PROC)
-
+def generate_img_with_pool(img_number: int,
+                           file: str = 'images.hdf5',
+                           generation_block: int = 1000,
+                           processes: int = 8):
+    gen_iterations = img_number // (processes * generation_block)
+    p = Pool(processes)
     for i in tqdm(range(gen_iterations)):
-        gen_img = p.map(generate_img_hash, [BLOCK for _ in range(PROC)])
-        shift = i * BLOCK * PROC
-        f = h5py.File('data/images.hdf5', 'r+')
+        gen_img = p.map(generate_img_hash, [generation_block for _ in range(processes)])
+        shift = i * generation_block * processes
+        f = h5py.File('data' + os.sep + file, 'r+')
         image_dset = f['/images/img']
         hash_dset = f['/images/xxhash64']
         for j, (images_arr, hashes_arr) in enumerate(gen_img):
             for k in range(len(images_arr)):
-                total_index = shift + j * BLOCK + k
+                total_index = shift + j * generation_block + k
                 try:
                     image_dset[total_index] = images_arr[k]
                     hash_dset[total_index] = hashes_arr[k]
