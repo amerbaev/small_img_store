@@ -3,6 +3,8 @@
 import h5py
 import numpy as np
 import os
+from timeit import timeit
+from collections import Counter
 
 import image_generator as img_gen
 
@@ -52,3 +54,11 @@ if __name__ == '__main__':
     init_hdf5(img_number)
     print('Генерация изображений')
     img_gen.generate_img_with_pool(img_number)
+    f = h5py.File('data/images.hdf5', 'r')
+    hash_dset = f['/images/xxhash64']
+    print('Время поиска хеша:', timeit('find_index_by_hash(hash_dset, xxhash)',
+                                       setup='xxhash = hash_dset[np.random.randint(img_number)]',
+                                       globals=globals(),
+                                       number=100) / 100)
+    print('Коллизии: ', [item for item, count in Counter([value.tobytes() for value in hash_dset[:]]).most_common() if count > 1])
+    f.close()
