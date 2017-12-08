@@ -7,9 +7,11 @@ from collections import Counter
 class Hdf5Store:
     def __init__(self, file_path: str):
         self.file_path = file_path
+        self.file = None
+        self.hashes = {}
 
     def __open_readwrite(self):
-        if 'file' not in self.__dict__:
+        if not self.file:
             self.file = h5py.File(self.file_path, 'r+')
 
     def close(self):
@@ -80,3 +82,9 @@ class Hdf5Store:
         self.__open_readwrite()
         hash_dset = self.file['/images/xxhash64']
         return hash_dset[index]
+
+    def load_hashes_to_memory(self):
+        self.__open_readwrite()
+        if not self.hashes:
+            hash_dset = self.file['/images/xxhash64']
+            self.hashes = {xxh.tobytes(): index[0] for index, xxh in np.ndenumerate(hash_dset)}
