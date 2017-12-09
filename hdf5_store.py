@@ -17,6 +17,8 @@ class Hdf5Store:
     def close(self):
         if self.file:
             self.file.close()
+        if self.hashes:
+            self.hashes = {}
 
     def create(self, size: int, image_chunks: int = 100, hash_chunks: int = None):
         if not hash_chunks:
@@ -51,6 +53,8 @@ class Hdf5Store:
         hash_dset = self.file['/images/xxhash64']
         image_dset[index] = np.void(image)
         hash_dset[index] = np.void(xxhash64)
+        if self.hashes:
+            self.hashes[xxhash64] = index
 
     def put_array(self, image_arr: np.array, hash_arr: np.array, start_index: int = 0):
         self.__open_readwrite()
@@ -58,6 +62,8 @@ class Hdf5Store:
         hash_dset = self.file['/images/xxhash64']
         image_dset[start_index:start_index + image_arr.size] = image_arr
         hash_dset[start_index:start_index + hash_arr.size] = hash_arr
+        if self.hashes:
+            self.hashes.update({xxh.tobytes(): index[0] for index, xxh in np.ndenumerate(hash_arr)})
 
     def find_collisions(self) -> list:
         self.__open_readwrite()
@@ -68,22 +74,32 @@ class Hdf5Store:
     def find_image_by_hash(self, xxh: np.void) -> bytes:
         self.__open_readwrite()
         images_grp = self.file['/images']
-        index = np.argmax(images_grp['xxhash64'].value == xxh)
+        if not self.hashes:
+            index = np.argmax(images_grp['xxhash64'].value == xxh)
+        else:
+            index = self.hashes[xxh.tobytes()]
         result = images_grp['img'][index].tobytes() if index else b''
         return result
 
     def find_index_by_hash(self, xxh: np.void) -> int:
         self.__open_readwrite()
-        hash_dset = self.file['/images/xxhash64']
-        index = np.argmax(hash_dset.value == xxh)
-        return index if index else -1
+        if not self.hashes:
+            hash_dset = self.file['/images/xxhash64']
+            index = np.argmax(hash_dset.value == xxh)
+            return index if index else -1
+        else:
+            xxh = xxh.tobytes()
+            if xxh in self.hashes:
+                return self.hashes[xxh]
+            else:
+                return -1
 
     def get_hash_by_index(self, index: int):
         self.__open_readwrite()
         hash_dset = self.file['/images/xxhash64']
         return hash_dset[index]
 
-    def load_hashes_to_memory(self):
+    def load_hashes(self):
         self.__open_readwrite()
         if not self.hashes:
             hash_dset = self.file['/images/xxhash64']
