@@ -68,7 +68,10 @@ class Hdf5Store:
     def find_collisions(self) -> list:
         self.__open_readwrite()
         hash_dset = self.file['/images/xxhash64']
-        collisions = [item for item, count in Counter([value.tobytes() for value in hash_dset[:]]).most_common() if count > 1]
+        if not self.hashes:
+            collisions = [item for item, count in Counter([value.tobytes() for value in hash_dset[:]]).most_common() if count > 1]
+        else:
+            collisions = [item for item, count in Counter([value for value in self.hashes]).most_common() if count > 1]
         return collisions
 
     def find_image_by_hash(self, xxh: np.void) -> bytes:
